@@ -107,7 +107,7 @@
             return Array.from(products).find(product => product.getAttribute("id") === id);
         }
 
-        function createModuleSelector(labelText, options, selectedModules) {
+function createModuleSelector(labelText, options, selectedModules) {
     const container = document.createElement("div");
     container.className = "module-container";
 
@@ -171,7 +171,8 @@
 
 function updatePrice(selectedModules) {
     const moduleTotal = selectedModules.reduce((total, module) => {
-        return total + (modulePrices[module.value] || 0);
+        // If the module's value is "none", it adds 0 to the total
+        return module.value !== "none" ? total + (modulePrices[module.value] || 0) : total;
     }, 0);
     const totalPrice = basePrice + moduleTotal;
 
@@ -182,7 +183,10 @@ function updatePrice(selectedModules) {
 }
 
 function updateSummary(selectedModules) {
-    const modules = selectedModules
+    // Filter out "none" selections
+    const filteredModules = selectedModules.filter(module => module.value !== "none");
+
+    const modules = filteredModules
         .map(module => `${module.label}: ${module.value}`)
         .join(", ");
 
