@@ -147,18 +147,17 @@
         }
 
         // Update total price
-        function updatePrice(selectedModules) {
-            const moduleTotal = selectedModules.reduce((total, module) => {
-                return module.value !== "none" ? total + (modulePrices[module.value] || 0) : total;
-            }, 0);
-            const totalPrice = basePrice + moduleTotal;
+ function updatePrice(selectedModules) {
+    const moduleTotal = selectedModules.reduce((total, module) => {
+        return module.value !== "none" ? total + (modulePrices[module.value] || 0) : total;
+    }, 0);
+    const totalPrice = basePrice + moduleTotal;
 
-            // Format price with commas and no decimals
-            const formattedPrice = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(totalPrice);
+    // Format price with commas and no decimals
+    const formattedPrice = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(totalPrice);
 
-            document.getElementById("totalPrice").textContent = formattedPrice;
-        }
-
+    document.getElementById("totalPrice").textContent = formattedPrice;
+}
         // Update summary
         function updateSummary(selectedModules) {
             // Filter out "none" selections
