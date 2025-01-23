@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Product Selector</title>
+    <style>
+        .product {
+            display: inline-block;
+            margin: 20px;
+            text-align: center;
+        }
+        .product img {
+            width: 150px;
+            height: 150px;
+            cursor: pointer;
+        }
+        #productDetails {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Product Selector</h1>
+    <div id="productContainer"></div>
+    <div id="productDetails">
+        <h2 id="productName"></h2>
+        <p id="moduleInfo"></p>
+        <label for="moduleSelector">Select Module:</label>
+        <select id="moduleSelector"></select>
+    </div>
+
+    <script>
+        // XML data
+        const productsXML = `
+            <products>
+                <product id="1">
+                    <name>Product 1</name>
+                    <image>https://via.placeholder.com/150</image>
+                    <maxModules>
+                        <A>4</A>
+                        <B>3</B>
+                    </maxModules>
+                    <availableModules>
+                        <A>Type A1, Type A2, Type A3</A>
+                        <B>Type B1, Type B2</B>
+                    </availableModules>
+                </product>
+                <product id="2">
+                    <name>Product 2</name>
+                    <image>https://via.placeholder.com/150</image>
+                    <maxModules>
+                        <A>6</A>
+                        <B>2</B>
+                    </maxModules>
+                    <availableModules>
+                        <A>Type A4, Type A5</A>
+                        <B>Type B3, Type B4, Type B5</B>
+                    </availableModules>
+                </product>
+            </products>
+        `;
+
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(productsXML, "application/xml");
+        const products = xmlDoc.getElementsByTagName("product");
+
+        const productContainer = document.getElementById("productContainer");
+        const productDetails = document.getElementById("productDetails");
+        const productName = document.getElementById("productName");
+        const moduleInfo = document.getElementById("moduleInfo");
+        const moduleSelector = document.getElementById("moduleSelector");
+
+        // Create product cards
+        Array.from(products).forEach(product => {
+            const id = product.getAttribute("id");
+            const name = product.getElementsByTagName("name")[0].textContent;
+            const image = product.getElementsByTagName("image")[0].textContent;
+            const maxA = product.getElementsByTagName("A")[0].textContent;
+            const maxB = product.getElementsByTagName("B")[0].textContent;
+            const availableA = product.getElementsByTagName("A")[1].textContent.split(", ");
+            const availableB = product.getElementsByTagName("B")[1].textContent.split(", ");
+
+            const productDiv = document.createElement("div");
+            productDiv.className = "product";
+            productDiv.innerHTML = `
+                <img src="${image}" alt="${name}" data-id="${id}" />
+                <p>${name}</p>
+            `;
+
+            productDiv.querySelector("img").addEventListener("click", () => {
+                showProductDetails(name, maxA, maxB, availableA, availableB);
+            });
+
+            productContainer.appendChild(productDiv);
+        });
+
+        function showProductDetails(name, maxA, maxB, availableA, availableB) {
+            productName.textContent = name;
+            moduleInfo.textContent = `This product can hold up to ${maxA} A modules and ${maxB} B modules.`;
+
+            moduleSelector.innerHTML = ""; // Clear previous options
+            [...availableA, ...availableB].forEach(moduleType => {
+                const option = document.createElement("option");
+                option.value = moduleType;
+                option.textContent = moduleType;
+                moduleSelector.appendChild(option);
+            });
+
+            productDetails.style.display = "block";
+        }
+    </script>
+</body>
+</html>
