@@ -49,6 +49,10 @@
     </div>
 
     <script>
+        // Declare global object to store module prices
+        let modulePrices = {};
+        let basePrice = 0;
+
         // Fetch product data from an external XML file
         async function fetchProductData() {
             const response = await fetch('products.xml');
@@ -84,7 +88,7 @@
         }
 
         // Create module selector
-        function createModuleSelector(labelText, type, options, selectedModules) {
+        function createModuleSelector(labelText, type, moduleMap, selectedModules) {
             const container = document.createElement("div");
             container.className = "module-container";
 
@@ -105,8 +109,8 @@
 
             // If module type is Hybrid, include Combat and Service options
             if (type === 'Hybrid') {
-                const combatOptions = modulePrices["Combat"];
-                const serviceOptions = modulePrices["Service"];
+                const combatOptions = moduleMap["Combat"] || [];  // Ensure Combat exists
+                const serviceOptions = moduleMap["Service"] || [];  // Ensure Service exists
 
                 // Add Combat modules
                 combatOptions.forEach(option => {
@@ -114,7 +118,7 @@
                     opt.value = option.id;
                     opt.textContent = option.id;
                     select.appendChild(opt);
-                    modulePrices[option.id] = option.price; // Store module price
+                    modulePrices[option.id] = option.price;  // Store module price
                 });
 
                 // Add Service modules
@@ -123,10 +127,11 @@
                     opt.value = option.id;
                     opt.textContent = option.id;
                     select.appendChild(opt);
-                    modulePrices[option.id] = option.price; // Store module price
+                    modulePrices[option.id] = option.price;  // Store module price
                 });
             } else {
                 // Add regular module options
+                const options = moduleMap[type] || [];
                 options.forEach(option => {
                     const opt = document.createElement("option");
                     opt.value = option.id;
@@ -201,7 +206,7 @@
         // Initialize product and module data
         async function initialize() {
             const products = await fetchProductData();
-            const moduleMap = await fetchModules();
+            const moduleMap = await fetchModules(); // Ensure moduleMap contains valid data
             const urlParams = new URLSearchParams(window.location.search);
             const productId = urlParams.get("productId");
 
@@ -234,7 +239,7 @@
                 if (max > 0) {
                     const options = moduleMap[type]; // Fetch module options for this type
                     for (let i = 0; i < max; i++) {
-                        const moduleDiv = createModuleSelector(`${type} Slot ${i + 1}`, type, options, selectedModules);
+                        const moduleDiv = createModuleSelector(`${type} Slot ${i + 1}`, type, moduleMap, selectedModules);
                         moduleSelectors.appendChild(moduleDiv);
                     }
                 }
