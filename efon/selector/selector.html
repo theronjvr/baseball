@@ -140,13 +140,14 @@
             return container;
         }
 
-        function updateSummary(selectedModules) {
-            const summary = selectedModules
-                .map(module => `${module.label}: ${module.value}`)
-                .join("\n");
+function updateSummary(selectedModules) {
+    const modules = selectedModules
+        .map(module => `${module.label}: ${module.value}`)
+        .join(", ");
 
-            summaryField.value = `Modules:\n${summary}`;
-        }
+    const productName = document.getElementById("productName").textContent;
+    summaryField.value = `I would like to purchase a ${productName} with the following modules: ${modules}`;
+}
 
         async function initialize() {
             const urlParams = new URLSearchParams(window.location.search);
