@@ -22,6 +22,9 @@
             font-style: italic;
             color: gray;
         }
+        #priceContainer {
+            margin-top: 20px;
+        }
         #summaryContainer {
             margin-top: 20px;
         }
@@ -35,6 +38,9 @@
     <h1 id="productName">Loading...</h1>
     <img id="productImage" class="product-image" alt="Product Image" />
     <div id="moduleSelectors"></div>
+    <div id="priceContainer">
+        <h3>Total Price: <span id="totalPrice">0</span> Republic Credits</h3>
+    </div>
     <div id="summaryContainer">
         <h3>Selection Summary</h3>
         <textarea id="summaryField" readonly></textarea>
@@ -46,6 +52,7 @@
                 <product id="1">
                     <name>MSE Advanced</name>
                     <image>https://theronjvr.github.io/efon/selector/images/Mse-droid.png</image>
+                    <basePrice>10000</basePrice>
                     <maxModules>
                         <Combat>0</Combat>
                         <Service>2</Service>
@@ -57,6 +64,7 @@
                 <product id="2">
                     <name>Probot Advanced II</name>
                     <image>https://theronjvr.github.io/efon/selector/images/Probot-droid.png</image>
+                    <basePrice>30000</basePrice>
                     <maxModules>
                         <Combat>9</Combat>
                         <Service>0</Service>
@@ -72,6 +80,9 @@
         const productDoc = parser.parseFromString(productXML, "application/xml");
         const products = productDoc.getElementsByTagName("product");
 
+        let basePrice = 0;
+        const modulePrices = {};
+
         async function fetchModules() {
             const response = await fetch('modules.xml');
             const text = await response.text();
@@ -83,7 +94,8 @@
                 const id = type.getAttribute("id");
                 const options = Array.from(type.getElementsByTagName("option")).map(opt => ({
                     id: opt.textContent,
-                    description: opt.getAttribute("description")
+                    description: opt.getAttribute("description"),
+                    price: parseFloat(opt.getAttribute("price"))
                 }));
                 moduleMap[id] = options;
             });
@@ -113,6 +125,7 @@
                 opt.value = option.id;
                 opt.textContent = option.id;
                 select.appendChild(opt);
+                modulePrices[option.id] = option.price;
             });
 
             select.addEventListener("change", () => {
@@ -129,7 +142,8 @@
                     selectedModules.push({ label: labelText, value: select.value });
                 }
 
-                // Clear and rebuild summary
+                // Update price and summary
+                updatePrice(selectedModules);
                 updateSummary(selectedModules);
             });
 
@@ -140,14 +154,24 @@
             return container;
         }
 
-function updateSummary(selectedModules) {
-    const modules = selectedModules
-        .map(module => `${module.label}: ${module.value}`)
-        .join(", ");
+        function updatePrice(selectedModules) {
+            const moduleTotal = selectedModules.reduce((total, module) => {
+                return total + (modulePrices[module.value] || 0);
+            }, 0);
+            const totalPrice = basePrice + moduleTotal;
+            document.getElementById("totalPrice").textContent = totalPrice.toFixed(2);
+        }
 
-    const productName = document.getElementById("productName").textContent;
-    summaryField.value = `I would like to purchase a ${productName} with the following modules: ${modules}`;
-}
+        function updateSummary(selectedModules) {
+            const modules = selectedModules
+                .map(module => `${module.label}: ${module.value}`)
+                .join(", ");
+
+            const productName = document.getElementById("productName").textContent;
+            const totalPrice = document.getElementById("totalPrice").textContent;
+
+            summaryField.value = `I would like to purchase a ${productName} with the following modules: ${modules}. Total Price: ${totalPrice} Republic Credits.`;
+        }
 
         async function initialize() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -161,11 +185,15 @@ function updateSummary(selectedModules) {
             const product = getProductById(productId);
             const name = product.getElementsByTagName("name")[0].textContent;
             const image = product.getElementsByTagName("image")[0].textContent;
+            basePrice = parseFloat(product.getElementsByTagName("basePrice")[0].textContent);
             const maxModules = product.getElementsByTagName("maxModules")[0].children;
 
             // Set product name and image
             document.getElementById("productName").textContent = name;
             document.getElementById("productImage").src = image;
+
+            // Display initial price
+            document.getElementById("totalPrice").textContent = basePrice.toFixed(2);
 
             const moduleMap = await fetchModules();
             const moduleSelectors = document.getElementById("moduleSelectors");
