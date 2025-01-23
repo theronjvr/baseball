@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Module Selector</title>
+    <style>
+        .module-container {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .module-label {
+            display: inline-block;
+            width: 150px;
+        }
+        .module-description {
+            margin-left: 20px;
+            font-style: italic;
+            color: gray;
+        }
+        #summaryContainer {
+            margin-top: 20px;
+        }
+        #summaryField {
+            width: 100%;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="productName">Loading...</h1>
+    <div id="moduleSelectors"></div>
+    <div id="summaryContainer">
+        <h3>Selection Summary</h3>
+        <textarea id="summaryField" readonly></textarea>
+    </div>
+
+    <script>
+        const productXML = `
+            <products>
+                <product id="1">
+                    <name>Product Alpha</name>
+                    <maxModules>
+                        <Combat>2</Combat>
+                        <Service>1</Service>
+                        <Hybrid>1</Hybrid>
+                        <Armor>1</Armor>
+                        <Personality>1</Personality>
+                    </maxModules>
+                </product>
+                <product id="2">
+                    <name>Product Beta</name>
+                    <maxModules>
+                        <Combat>3</Combat>
+                        <Service>2</Service>
+                        <Hybrid>0</Hybrid>
+                        <Armor>1</Armor>
+                        <Personality>2</Personality>
+                    </maxModules>
+                </product>
+            </products>
+        `;
+
+        const parser = new DOMParser();
+        const productDoc = parser.parseFromString(productXML, "application/xml");
+        const products = productDoc.getElementsByTagName("product");
+
+        async function fetchModules() {
+            const response = await fetch('modules.xml');
+            const text = await response.text();
+            const moduleDoc = parser.parseFromString(text, "application/xml");
+            const moduleTypes = moduleDoc.getElementsByTagName("type");
+            const moduleMap = {};
+
+            Array.from(moduleTypes).forEach(type => {
+                const id = type.getAttribute("id");
+                const options = Array.from(type.getElementsByTagName("option")).map(opt => ({
+                    id: opt.textContent,
+                    description: opt.getAttribute("description")
+                }));
+                moduleMap[id] = options;
+            });
+
+            return moduleMap;
+        }
+
+        function getProductById(id) {
+            return Array.from(products).find(product => product.getAttribute("id") === id);
+        }
+
+        function createModuleSelector(labelText, options, selectedModules) {
+            const container = document.createElement("div");
+            container.className = "module-container";
+
+            const label = document.createElement("span");
+            label.className = "module-label";
+            label.textContent = labelText;
+
+            const select = document.createElement("select");
+            const description = document.createElement("span");
+            description.className = "module-description";
+            description.textContent = "Select a module";
+
+            options.forEach(option => {
+                const opt = document.createElement("option");
+                opt.value = option.id;
+                opt.textContent = option.id;
+                select.appendChild(opt);
+            });
+
+            select.addEventListener("change", () => {
+                const selectedOption = options.find(opt => opt.id === select.value);
+                description.textContent = selectedOption?.description || "Select a module";
+                selectedModules.push(select.value);
+                updateSummary(selectedModules);
+            });
+
+            container.appendChild(label);
+            container.appendChild(select);
+            container.appendChild(description);
+
+            return container;
+        }
+
+        function updateSummary(selectedModules) {
+            summaryField.value = `Modules:\n${selectedModules.join(", ")}`;
+        }
+
+        async function initialize() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get("productId");
+
+            if (!productId) {
+                document.getElementById("productName").textContent = "Product not found.";
+                return;
+            }
+
+            const product = getProductById(productId);
+            const name = product.getElementsByTagName("name")[0].textContent;
+            const maxModules = product.getElementsByTagName("maxModules")[0].children;
+
+            document.getElementById("productName").textContent = name;
+
+            const moduleMap = await fetchModules();
+            const moduleSelectors = document.getElementById("moduleSelectors");
+            const selectedModules = [];
+
+            Array.from(maxModules).forEach(slot => {
+                const type = slot.tagName;
+                const max = parseInt(slot.textContent);
+                const options = moduleMap[type];
+
+                for (let i = 0; i < max; i++) {
+                    const moduleDiv = createModuleSelector(`${type} Slot ${i + 1}`, options, selectedModules);
+                    moduleSelectors.appendChild(moduleDiv);
+                }
+            });
+        }
+
+        initialize();
+    </script>
+</body>
+</html>
