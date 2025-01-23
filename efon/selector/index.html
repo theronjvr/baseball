@@ -13,45 +13,11 @@
             height: 150px;
             cursor: pointer;
         }
-        #productDetails {
-            display: none;
-            margin-top: 20px;
-        }
-        .module-container {
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-        }
-        .module-label {
-            display: inline-block;
-            width: 150px;
-        }
-        .module-description {
-            margin-left: 20px;
-            font-style: italic;
-            color: gray;
-        }
-        #summaryContainer {
-            margin-top: 20px;
-        }
-        #summaryField {
-            width: 100%;
-            height: 100px;
-        }
     </style>
 </head>
 <body>
     <h1>Product Selector</h1>
     <div id="productContainer"></div>
-    <div id="productDetails">
-        <h2 id="productName"></h2>
-        <p id="moduleInfo"></p>
-        <div id="moduleSelectors"></div>
-        <div id="summaryContainer">
-            <h3>Selection Summary</h3>
-            <textarea id="summaryField" readonly></textarea>
-        </div>
-    </div>
 
     <script>
         const productXML = `
@@ -59,24 +25,10 @@
                 <product id="1">
                     <name>MSE Advanced</name>
                     <image>https://theronjvr.github.io/efon/selector/images/Mse-droid.png</image>
-                    <maxModules>
-                        <Combat>0</Combat>
-                        <Service>2</Service>
-                        <Hybrid>0</Hybrid>
-                        <Armor>1</Armor>
-                        <Personality>0</Personality>
-                    </maxModules>
                 </product>
                 <product id="2">
                     <name>Probot Advanced II</name>
                     <image>https://theronjvr.github.io/efon/selector/images/Probot-droid.png</image>
-                    <maxModules>
-                        <Combat>9</Combat>
-                        <Service>0</Service>
-                        <Hybrid>3</Hybrid>
-                        <Armor>2</Armor>
-                        <Personality>0</Personality>
-                    </maxModules>
                 </product>
             </products>
         `;
@@ -86,125 +38,25 @@
         const products = productDoc.getElementsByTagName("product");
 
         const productContainer = document.getElementById("productContainer");
-        const productDetails = document.getElementById("productDetails");
-        const productName = document.getElementById("productName");
-        const moduleInfo = document.getElementById("moduleInfo");
-        const moduleSelectors = document.getElementById("moduleSelectors");
-        const summaryField = document.getElementById("summaryField");
 
-        async function fetchModules() {
-            const response = await fetch('modules.xml');
-            const text = await response.text();
-            const moduleDoc = parser.parseFromString(text, "application/xml");
-            const moduleTypes = moduleDoc.getElementsByTagName("type");
-            const moduleMap = {};
+        Array.from(products).forEach(product => {
+            const id = product.getAttribute("id");
+            const name = product.getElementsByTagName("name")[0].textContent;
+            const image = product.getElementsByTagName("image")[0].textContent;
 
-            Array.from(moduleTypes).forEach(type => {
-                const id = type.getAttribute("id");
-                const options = Array.from(type.getElementsByTagName("option")).map(opt => ({
-                    id: opt.textContent,
-                    description: opt.getAttribute("description")
-                }));
-                moduleMap[id] = options;
+            const productDiv = document.createElement("div");
+            productDiv.className = "product";
+            productDiv.innerHTML = `
+                <img src="${image}" alt="${name}" data-id="${id}" />
+                <p>${name}</p>
+            `;
+
+            productDiv.querySelector("img").addEventListener("click", () => {
+                window.location.href = `selector.html?productId=${id}`;
             });
 
-            return moduleMap;
-        }
-
-        async function initialize() {
-            const moduleMap = await fetchModules();
-
-            Array.from(products).forEach(product => {
-                const id = product.getAttribute("id");
-                const name = product.getElementsByTagName("name")[0].textContent;
-                const image = product.getElementsByTagName("image")[0].textContent;
-                const maxModules = product.getElementsByTagName("maxModules")[0].children;
-
-                const productDiv = document.createElement("div");
-                productDiv.className = "product";
-                productDiv.innerHTML = `
-                    <img src="${image}" alt="${name}" data-id="${id}" />
-                    <p>${name}</p>
-                `;
-
-                productDiv.querySelector("img").addEventListener("click", () => {
-                    const maxSlots = {};
-                    Array.from(maxModules).forEach(slot => {
-                        maxSlots[slot.tagName] = parseInt(slot.textContent);
-                    });
-                    showProductDetails(name, maxSlots, moduleMap);
-                });
-
-                productContainer.appendChild(productDiv);
-            });
-        }
-
-        function showProductDetails(name, maxSlots, moduleMap) {
-            productName.textContent = name;
-            moduleSelectors.innerHTML = ""; // Clear previous selectors
-
-            const selectedModules = {};
-            Object.keys(maxSlots).forEach(type => {
-                const max = maxSlots[type];
-                const options = moduleMap[type];
-                selectedModules[type] = [];
-
-                for (let i = 0; i < max; i++) {
-                    const moduleDiv = createModuleSelector(
-                        `${type} Slot ${i + 1}`,
-                        options,
-                        selectedModules[type]
-                    );
-                    moduleSelectors.appendChild(moduleDiv);
-                }
-            });
-
-            updateSummary(name, selectedModules);
-            productDetails.style.display = "block";
-        }
-
-        function createModuleSelector(labelText, options, selectedModules) {
-            const container = document.createElement("div");
-            container.className = "module-container";
-
-            const label = document.createElement("span");
-            label.className = "module-label";
-            label.textContent = labelText;
-
-            const select = document.createElement("select");
-            const description = document.createElement("span");
-            description.className = "module-description";
-            description.textContent = "Select a module";
-
-            options.forEach(option => {
-                const opt = document.createElement("option");
-                opt.value = option.id;
-                opt.textContent = option.id;
-                select.appendChild(opt);
-            });
-
-            select.addEventListener("change", () => {
-                const selectedOption = options.find(opt => opt.id === select.value);
-                description.textContent = selectedOption?.description || "Select a module";
-                selectedModules.push(select.value);
-                updateSummary(productName.textContent, selectedModules);
-            });
-
-            container.appendChild(label);
-            container.appendChild(select);
-            container.appendChild(description);
-
-            return container;
-        }
-
-        function updateSummary(product, selectedModules) {
-            const moduleSummary = Object.entries(selectedModules)
-                .map(([type, modules]) => `${type}: ${modules.join(", ")}`)
-                .join("\n");
-            summaryField.value = `Product: ${product}\nModules:\n${moduleSummary}`;
-        }
-
-        initialize();
+            productContainer.appendChild(productDiv);
+        });
     </script>
 </body>
 </html>
