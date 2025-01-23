@@ -36,8 +36,7 @@
     </div>
 
     <script>
-        // XML data
-        const productsXML = `
+        const productXML = `
             <products>
                 <product id="1">
                     <name>Product 1</name>
@@ -46,10 +45,6 @@
                         <A>4</A>
                         <B>3</B>
                     </maxModules>
-                    <availableModules>
-                        <A>Type A1, Type A2, Type A3</A>
-                        <B>Type B1, Type B2</B>
-                    </availableModules>
                 </product>
                 <product id="2">
                     <name>Product 2</name>
@@ -58,17 +53,13 @@
                         <A>6</A>
                         <B>2</B>
                     </maxModules>
-                    <availableModules>
-                        <A>Type A4, Type A5</A>
-                        <B>Type B3, Type B4, Type B5</B>
-                    </availableModules>
                 </product>
             </products>
         `;
 
         const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(productsXML, "application/xml");
-        const products = xmlDoc.getElementsByTagName("product");
+        const productDoc = parser.parseFromString(productXML, "application/xml");
+        const products = productDoc.getElementsByTagName("product");
 
         const productContainer = document.getElementById("productContainer");
         const productDetails = document.getElementById("productDetails");
@@ -76,29 +67,46 @@
         const moduleInfo = document.getElementById("moduleInfo");
         const moduleSelectors = document.getElementById("moduleSelectors");
 
-        // Create product cards
-        Array.from(products).forEach(product => {
-            const id = product.getAttribute("id");
-            const name = product.getElementsByTagName("name")[0].textContent;
-            const image = product.getElementsByTagName("image")[0].textContent;
-            const maxA = parseInt(product.getElementsByTagName("A")[0].textContent);
-            const maxB = parseInt(product.getElementsByTagName("B")[0].textContent);
-            const availableA = product.getElementsByTagName("A")[1].textContent.split(", ");
-            const availableB = product.getElementsByTagName("B")[1].textContent.split(", ");
+        async function fetchModules() {
+            const response = await fetch('modules.xml');
+            const text = await response.text();
+            const moduleDoc = parser.parseFromString(text, "application/xml");
+            const moduleTypes = moduleDoc.getElementsByTagName("type");
+            const moduleMap = {};
 
-            const productDiv = document.createElement("div");
-            productDiv.className = "product";
-            productDiv.innerHTML = `
-                <img src="${image}" alt="${name}" data-id="${id}" />
-                <p>${name}</p>
-            `;
-
-            productDiv.querySelector("img").addEventListener("click", () => {
-                showProductDetails(name, maxA, maxB, availableA, availableB);
+            Array.from(moduleTypes).forEach(type => {
+                const id = type.getAttribute("id");
+                const options = Array.from(type.getElementsByTagName("option")).map(opt => opt.textContent);
+                moduleMap[id] = options;
             });
 
-            productContainer.appendChild(productDiv);
-        });
+            return moduleMap;
+        }
+
+        async function initialize() {
+            const moduleMap = await fetchModules();
+
+            Array.from(products).forEach(product => {
+                const id = product.getAttribute("id");
+                const name = product.getElementsByTagName("name")[0].textContent;
+                const image = product.getElementsByTagName("image")[0].textContent;
+                const maxA = parseInt(product.getElementsByTagName("A")[0].textContent);
+                const maxB = parseInt(product.getElementsByTagName("B")[0].textContent);
+
+                const productDiv = document.createElement("div");
+                productDiv.className = "product";
+                productDiv.innerHTML = `
+                    <img src="${image}" alt="${name}" data-id="${id}" />
+                    <p>${name}</p>
+                `;
+
+                productDiv.querySelector("img").addEventListener("click", () => {
+                    showProductDetails(name, maxA, maxB, moduleMap.A, moduleMap.B);
+                });
+
+                productContainer.appendChild(productDiv);
+            });
+        }
 
         function showProductDetails(name, maxA, maxB, availableA, availableB) {
             productName.textContent = name;
@@ -142,6 +150,8 @@
 
             return container;
         }
+
+        initialize();
     </script>
 </body>
 </html>
