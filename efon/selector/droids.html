@@ -17,6 +17,13 @@
             display: none;
             margin-top: 20px;
         }
+        .module-container {
+            margin: 10px 0;
+        }
+        .module-label {
+            display: inline-block;
+            width: 100px;
+        }
     </style>
 </head>
 <body>
@@ -25,8 +32,7 @@
     <div id="productDetails">
         <h2 id="productName"></h2>
         <p id="moduleInfo"></p>
-        <label for="moduleSelector">Select Module:</label>
-        <select id="moduleSelector"></select>
+        <div id="moduleSelectors"></div>
     </div>
 
     <script>
@@ -68,15 +74,15 @@
         const productDetails = document.getElementById("productDetails");
         const productName = document.getElementById("productName");
         const moduleInfo = document.getElementById("moduleInfo");
-        const moduleSelector = document.getElementById("moduleSelector");
+        const moduleSelectors = document.getElementById("moduleSelectors");
 
         // Create product cards
         Array.from(products).forEach(product => {
             const id = product.getAttribute("id");
             const name = product.getElementsByTagName("name")[0].textContent;
             const image = product.getElementsByTagName("image")[0].textContent;
-            const maxA = product.getElementsByTagName("A")[0].textContent;
-            const maxB = product.getElementsByTagName("B")[0].textContent;
+            const maxA = parseInt(product.getElementsByTagName("A")[0].textContent);
+            const maxB = parseInt(product.getElementsByTagName("B")[0].textContent);
             const availableA = product.getElementsByTagName("A")[1].textContent.split(", ");
             const availableB = product.getElementsByTagName("B")[1].textContent.split(", ");
 
@@ -98,15 +104,43 @@
             productName.textContent = name;
             moduleInfo.textContent = `This product can hold up to ${maxA} A modules and ${maxB} B modules.`;
 
-            moduleSelector.innerHTML = ""; // Clear previous options
-            [...availableA, ...availableB].forEach(moduleType => {
-                const option = document.createElement("option");
-                option.value = moduleType;
-                option.textContent = moduleType;
-                moduleSelector.appendChild(option);
-            });
+            moduleSelectors.innerHTML = ""; // Clear previous selectors
+
+            // Create dropdowns for A modules
+            for (let i = 0; i < maxA; i++) {
+                const moduleDiv = createModuleSelector(`Slot A${i + 1}`, availableA);
+                moduleSelectors.appendChild(moduleDiv);
+            }
+
+            // Create dropdowns for B modules
+            for (let i = 0; i < maxB; i++) {
+                const moduleDiv = createModuleSelector(`Slot B${i + 1}`, availableB);
+                moduleSelectors.appendChild(moduleDiv);
+            }
 
             productDetails.style.display = "block";
+        }
+
+        function createModuleSelector(labelText, options) {
+            const container = document.createElement("div");
+            container.className = "module-container";
+
+            const label = document.createElement("span");
+            label.className = "module-label";
+            label.textContent = labelText;
+
+            const select = document.createElement("select");
+            options.forEach(option => {
+                const opt = document.createElement("option");
+                opt.value = option;
+                opt.textContent = option;
+                select.appendChild(opt);
+            });
+
+            container.appendChild(label);
+            container.appendChild(select);
+
+            return container;
         }
     </script>
 </body>
