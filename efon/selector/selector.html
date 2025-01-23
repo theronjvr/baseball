@@ -154,24 +154,28 @@
             return container;
         }
 
-        function updatePrice(selectedModules) {
-            const moduleTotal = selectedModules.reduce((total, module) => {
-                return total + (modulePrices[module.value] || 0);
-            }, 0);
-            const totalPrice = basePrice + moduleTotal;
-            document.getElementById("totalPrice").textContent = totalPrice.toFixed(2);
-        }
+function updatePrice(selectedModules) {
+    const moduleTotal = selectedModules.reduce((total, module) => {
+        return total + (modulePrices[module.value] || 0);
+    }, 0);
+    const totalPrice = basePrice + moduleTotal;
 
-        function updateSummary(selectedModules) {
-            const modules = selectedModules
-                .map(module => `${module.label}: ${module.value}`)
-                .join(", ");
+    // Format price with commas and no decimals
+    const formattedPrice = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(totalPrice);
 
-            const productName = document.getElementById("productName").textContent;
-            const totalPrice = document.getElementById("totalPrice").textContent;
+    document.getElementById("totalPrice").textContent = formattedPrice;
+}
 
-            summaryField.value = `I would like to purchase a ${productName} with the following modules: ${modules}. Total Price: ${totalPrice} Republic Credits.`;
-        }
+function updateSummary(selectedModules) {
+    const modules = selectedModules
+        .map(module => `${module.label}: ${module.value}`)
+        .join(", ");
+
+    const productName = document.getElementById("productName").textContent;
+    const totalPrice = document.getElementById("totalPrice").textContent;
+
+    summaryField.value = `I would like to purchase a ${productName} with the following modules: ${modules}. Total Price: ${totalPrice} Republic Credits.`;
+}
 
 async function initialize() {
     const urlParams = new URLSearchParams(window.location.search);
