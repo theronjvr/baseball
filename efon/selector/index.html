@@ -19,10 +19,24 @@
         }
         .module-container {
             margin: 10px 0;
+            display: flex;
+            align-items: center;
         }
         .module-label {
             display: inline-block;
-            width: 100px;
+            width: 150px;
+        }
+        .module-description {
+            margin-left: 20px;
+            font-style: italic;
+            color: gray;
+        }
+        #summaryContainer {
+            margin-top: 20px;
+        }
+        #summaryField {
+            width: 100%;
+            height: 100px;
         }
     </style>
 </head>
@@ -33,25 +47,35 @@
         <h2 id="productName"></h2>
         <p id="moduleInfo"></p>
         <div id="moduleSelectors"></div>
+        <div id="summaryContainer">
+            <h3>Selection Summary</h3>
+            <textarea id="summaryField" readonly></textarea>
+        </div>
     </div>
 
     <script>
         const productXML = `
             <products>
                 <product id="1">
-                    <name>Product 1</name>
-                    <image>https://via.placeholder.com/150</image>
+                    <name>MSE Advanced</name>
+                    <image>images/Mse-droid.png</image>
                     <maxModules>
-                        <A>4</A>
-                        <B>3</B>
+                        <Combat>0</Combat>
+                        <Service>2</Service>
+                        <Hybrid>0</Hybrid>
+                        <Armor>1</Armor>
+                        <Personality>0</Personality>
                     </maxModules>
                 </product>
                 <product id="2">
-                    <name>Product 2</name>
-                    <image>https://via.placeholder.com/150</image>
+                    <name>Probot Advanced II</name>
+                    <image>images/Probot-droid.png</image>
                     <maxModules>
-                        <A>6</A>
-                        <B>2</B>
+                        <Combat>9</Combat>
+                        <Service>0</Service>
+                        <Hybrid>3</Hybrid>
+                        <Armor>2</Armor>
+                        <Personality>0</Personality>
                     </maxModules>
                 </product>
             </products>
@@ -66,6 +90,7 @@
         const productName = document.getElementById("productName");
         const moduleInfo = document.getElementById("moduleInfo");
         const moduleSelectors = document.getElementById("moduleSelectors");
+        const summaryField = document.getElementById("summaryField");
 
         async function fetchModules() {
             const response = await fetch('modules.xml');
@@ -76,7 +101,10 @@
 
             Array.from(moduleTypes).forEach(type => {
                 const id = type.getAttribute("id");
-                const options = Array.from(type.getElementsByTagName("option")).map(opt => opt.textContent);
+                const options = Array.from(type.getElementsByTagName("option")).map(opt => ({
+                    id: opt.textContent,
+                    description: opt.getAttribute("description")
+                }));
                 moduleMap[id] = options;
             });
 
@@ -90,8 +118,7 @@
                 const id = product.getAttribute("id");
                 const name = product.getElementsByTagName("name")[0].textContent;
                 const image = product.getElementsByTagName("image")[0].textContent;
-                const maxA = parseInt(product.getElementsByTagName("A")[0].textContent);
-                const maxB = parseInt(product.getElementsByTagName("B")[0].textContent);
+                const maxModules = product.getElementsByTagName("maxModules")[0].children;
 
                 const productDiv = document.createElement("div");
                 productDiv.className = "product";
@@ -101,35 +128,42 @@
                 `;
 
                 productDiv.querySelector("img").addEventListener("click", () => {
-                    showProductDetails(name, maxA, maxB, moduleMap.A, moduleMap.B);
+                    const maxSlots = {};
+                    Array.from(maxModules).forEach(slot => {
+                        maxSlots[slot.tagName] = parseInt(slot.textContent);
+                    });
+                    showProductDetails(name, maxSlots, moduleMap);
                 });
 
                 productContainer.appendChild(productDiv);
             });
         }
 
-        function showProductDetails(name, maxA, maxB, availableA, availableB) {
+        function showProductDetails(name, maxSlots, moduleMap) {
             productName.textContent = name;
-            moduleInfo.textContent = `This product can hold up to ${maxA} A modules and ${maxB} B modules.`;
-
             moduleSelectors.innerHTML = ""; // Clear previous selectors
 
-            // Create dropdowns for A modules
-            for (let i = 0; i < maxA; i++) {
-                const moduleDiv = createModuleSelector(`Slot A${i + 1}`, availableA);
-                moduleSelectors.appendChild(moduleDiv);
-            }
+            const selectedModules = {};
+            Object.keys(maxSlots).forEach(type => {
+                const max = maxSlots[type];
+                const options = moduleMap[type];
+                selectedModules[type] = [];
 
-            // Create dropdowns for B modules
-            for (let i = 0; i < maxB; i++) {
-                const moduleDiv = createModuleSelector(`Slot B${i + 1}`, availableB);
-                moduleSelectors.appendChild(moduleDiv);
-            }
+                for (let i = 0; i < max; i++) {
+                    const moduleDiv = createModuleSelector(
+                        `${type} Slot ${i + 1}`,
+                        options,
+                        selectedModules[type]
+                    );
+                    moduleSelectors.appendChild(moduleDiv);
+                }
+            });
 
+            updateSummary(name, selectedModules);
             productDetails.style.display = "block";
         }
 
-        function createModuleSelector(labelText, options) {
+        function createModuleSelector(labelText, options, selectedModules) {
             const container = document.createElement("div");
             container.className = "module-container";
 
@@ -138,17 +172,36 @@
             label.textContent = labelText;
 
             const select = document.createElement("select");
+            const description = document.createElement("span");
+            description.className = "module-description";
+            description.textContent = "Select a module";
+
             options.forEach(option => {
                 const opt = document.createElement("option");
-                opt.value = option;
-                opt.textContent = option;
+                opt.value = option.id;
+                opt.textContent = option.id;
                 select.appendChild(opt);
+            });
+
+            select.addEventListener("change", () => {
+                const selectedOption = options.find(opt => opt.id === select.value);
+                description.textContent = selectedOption?.description || "Select a module";
+                selectedModules.push(select.value);
+                updateSummary(productName.textContent, selectedModules);
             });
 
             container.appendChild(label);
             container.appendChild(select);
+            container.appendChild(description);
 
             return container;
+        }
+
+        function updateSummary(product, selectedModules) {
+            const moduleSummary = Object.entries(selectedModules)
+                .map(([type, modules]) => `${type}: ${modules.join(", ")}`)
+                .join("\n");
+            summaryField.value = `Product: ${product}\nModules:\n${moduleSummary}`;
         }
 
         initialize();
