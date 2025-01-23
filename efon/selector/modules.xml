@@ -11,8 +11,8 @@
     <type id="Service">
         <option id="Auto Repair" description="Repair droid damage to itself and any other droid within 30 meters." price="5000">Auto Repair</option>
         <option id="Crafting - Clothing" description="Allows droid owner to craft all known clothing schematics from anywhere." price="5000">Crafting - Clothing</option>
-        <option id="Crafting - Foods" description="Allows droid owner to craft all known food schematics from anywhere." price="5000">>Crafting - Foods</option>
-        <option id="Crafting - Ship Components" description=Allows droid owner to craft all known ship schematics from anywhere." price="5000">Crafting - Ship Components</option>
+        <option id="Crafting - Foods" description="Allows droid owner to craft all known food schematics from anywhere." price="5000">Crafting - Foods</option>
+        <option id="Crafting - Ship Components" description="Allows droid owner to craft all known ship schematics from anywhere." price="5000">Crafting - Ship Components</option>
         <option id="Crafting - Structures" description="Allows droid owner to craft all known structure schematics from anywhere." price="5000">Crafting - Structures</option>
         <option id="Crafting - Weapons" description="Allows droid owner to craft all known weapon schematics from anywhere." price="5000">Crafting - Weapons</option>
         <option id="Creature Harvest" description="Increases yield of meat/hide/bones by 20. Select 6 to cap." price="5000">Creature Harvest</option>
