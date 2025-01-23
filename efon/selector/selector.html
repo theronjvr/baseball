@@ -88,43 +88,58 @@
             return Array.from(products).find(product => product.getAttribute("id") === id);
         }
 
-        function createModuleSelector(labelText, options, selectedModules) {
-            const container = document.createElement("div");
-            container.className = "module-container";
+function createModuleSelector(labelText, options, selectedModules) {
+    const container = document.createElement("div");
+    container.className = "module-container";
 
-            const label = document.createElement("span");
-            label.className = "module-label";
-            label.textContent = labelText;
+    const label = document.createElement("span");
+    label.className = "module-label";
+    label.textContent = labelText;
 
-            const select = document.createElement("select");
-            const description = document.createElement("span");
-            description.className = "module-description";
-            description.textContent = "Select a module";
+    const select = document.createElement("select");
+    const description = document.createElement("span");
+    description.className = "module-description";
+    description.textContent = "Select a module";
 
-            options.forEach(option => {
-                const opt = document.createElement("option");
-                opt.value = option.id;
-                opt.textContent = option.id;
-                select.appendChild(opt);
-            });
+    options.forEach(option => {
+        const opt = document.createElement("option");
+        opt.value = option.id;
+        opt.textContent = option.id;
+        select.appendChild(opt);
+    });
 
-            select.addEventListener("change", () => {
-                const selectedOption = options.find(opt => opt.id === select.value);
-                description.textContent = selectedOption?.description || "Select a module";
-                selectedModules.push(select.value);
-                updateSummary(selectedModules);
-            });
+    select.addEventListener("change", () => {
+        const selectedOption = options.find(opt => opt.id === select.value);
+        description.textContent = selectedOption?.description || "Select a module";
 
-            container.appendChild(label);
-            container.appendChild(select);
-            container.appendChild(description);
-
-            return container;
+        // Update selected modules
+        const currentIndex = selectedModules.findIndex(
+            item => item.label === labelText
+        );
+        if (currentIndex >= 0) {
+            selectedModules[currentIndex] = { label: labelText, value: select.value };
+        } else {
+            selectedModules.push({ label: labelText, value: select.value });
         }
 
-        function updateSummary(selectedModules) {
-            summaryField.value = `Modules:\n${selectedModules.join(", ")}`;
-        }
+        // Clear and rebuild summary
+        updateSummary(selectedModules);
+    });
+
+    container.appendChild(label);
+    container.appendChild(select);
+    container.appendChild(description);
+
+    return container;
+}
+
+function updateSummary(selectedModules) {
+    const summary = selectedModules
+        .map(module => `${module.label}: ${module.value}`)
+        .join("\n");
+
+    summaryField.value = `Modules:\n${summary}`;
+}
 
         async function initialize() {
             const urlParams = new URLSearchParams(window.location.search);
