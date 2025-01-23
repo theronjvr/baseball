@@ -108,51 +108,66 @@
         }
 
         function createModuleSelector(labelText, options, selectedModules) {
-            const container = document.createElement("div");
-            container.className = "module-container";
+    const container = document.createElement("div");
+    container.className = "module-container";
 
-            const label = document.createElement("span");
-            label.className = "module-label";
-            label.textContent = labelText;
+    const label = document.createElement("span");
+    label.className = "module-label";
+    label.textContent = labelText;
 
-            const select = document.createElement("select");
-            const description = document.createElement("span");
-            description.className = "module-description";
-            description.textContent = "Select a module";
+    const select = document.createElement("select");
+    const description = document.createElement("span");
+    description.className = "module-description";
+    description.textContent = "Select a module";
 
-            options.forEach(option => {
-                const opt = document.createElement("option");
-                opt.value = option.id;
-                opt.textContent = option.id;
-                select.appendChild(opt);
-                modulePrices[option.id] = option.price;
-            });
+    // Add "(none)" option with price 0
+    const noneOption = document.createElement("option");
+    noneOption.value = "none";
+    noneOption.textContent = "(none)";
+    select.appendChild(noneOption);
 
-            select.addEventListener("change", () => {
-                const selectedOption = options.find(opt => opt.id === select.value);
-                description.textContent = selectedOption?.description || "Select a module";
+    // Add the available options from the moduleMap
+    options.forEach(option => {
+        const opt = document.createElement("option");
+        opt.value = option.id;
+        opt.textContent = option.id;
+        select.appendChild(opt);
+        modulePrices[option.id] = option.price; // Store module price
+    });
 
-                // Update selected modules
-                const currentIndex = selectedModules.findIndex(
-                    item => item.label === labelText
-                );
-                if (currentIndex >= 0) {
-                    selectedModules[currentIndex] = { label: labelText, value: select.value };
-                } else {
-                    selectedModules.push({ label: labelText, value: select.value });
-                }
+    select.addEventListener("change", () => {
+        let selectedPrice = 0;
 
-                // Update price and summary
-                updatePrice(selectedModules);
-                updateSummary(selectedModules);
-            });
-
-            container.appendChild(label);
-            container.appendChild(select);
-            container.appendChild(description);
-
-            return container;
+        // If (none) is selected, set price to 0
+        if (select.value !== "none") {
+            const selectedOption = options.find(opt => opt.id === select.value);
+            description.textContent = selectedOption?.description || "Select a module";
+            selectedPrice = selectedOption?.price || 0;
+        } else {
+            description.textContent = "(none)";
         }
+
+        // Update selected modules
+        const currentIndex = selectedModules.findIndex(
+            item => item.label === labelText
+        );
+        if (currentIndex >= 0) {
+            selectedModules[currentIndex] = { label: labelText, value: select.value };
+        } else {
+            selectedModules.push({ label: labelText, value: select.value });
+        }
+
+        // Update price and summary
+        updatePrice(selectedModules);
+        updateSummary(selectedModules);
+    });
+
+    container.appendChild(label);
+    container.appendChild(select);
+    container.appendChild(description);
+
+    return container;
+}
 
 function updatePrice(selectedModules) {
     const moduleTotal = selectedModules.reduce((total, module) => {
