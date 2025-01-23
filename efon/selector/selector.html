@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Module Selector</title>
     <style>
         .product-image {
@@ -157,26 +159,20 @@
             document.getElementById("totalPrice").textContent = formattedPrice;
         }
 
+        // Update summary
         function updateSummary(selectedModules) {
-    // Filter out "none" selections
-    const filteredModules = selectedModules.filter(module => module.value !== "none");
+            // Filter out "none" selections
+            const filteredModules = selectedModules.filter(module => module.value !== "none");
 
-    const modules = filteredModules
-        .map(module => `${module.label}: ${module.value}`)
-        .join(", ");
+            const modules = filteredModules
+                .map(module => `${module.label}: ${module.value}`)
+                .join(", ");
 
-    const productName = document.getElementById("productName").textContent;
-    const totalPrice = document.getElementById("totalPrice").textContent;
+            const productName = document.getElementById("productName").textContent;
+            const totalPrice = document.getElementById("totalPrice").textContent;
 
-    // Create the summary message in paragraph format
-    const summaryText = `I would like to purchase a ${productName} with the following modules: ${modules}. Total Price: ${totalPrice} Republic Credits.`;
-
-    // Format the final message with the email instruction
-    const finalMessage = `Copy the text below and send an email to Efon'Ahazi in game or message in Discord. Thank you for your business!\n\n${summaryText}`;
-
-    // Set the formatted message in the summary field
-    summaryField.value = finalMessage;
-}
+            summaryField.value = `I would like to purchase a ${productName} with the following modules: ${modules}. Total Price: ${totalPrice} Republic Credits.`;
+        }
 
         // Initialize product and module data
         async function initialize() {
