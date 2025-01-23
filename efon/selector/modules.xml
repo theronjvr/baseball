@@ -1,0 +1,16 @@
+<modules>
+    <type id="A">
+        <option>Type A1</option>
+        <option>Type A2</option>
+        <option>Type A3</option>
+        <option>Type A4</option>
+        <option>Type A5</option>
+    </type>
+    <type id="B">
+        <option>Type B1</option>
+        <option>Type B2</option>
+        <option>Type B3</option>
+        <option>Type B4</option>
+        <option>Type B5</option>
+    </type>
+</modules>
