@@ -173,43 +173,46 @@
             summaryField.value = `I would like to purchase a ${productName} with the following modules: ${modules}. Total Price: ${totalPrice} Republic Credits.`;
         }
 
-        async function initialize() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const productId = urlParams.get("productId");
+async function initialize() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get("productId");
 
-            if (!productId) {
-                document.getElementById("productName").textContent = "Product not found.";
-                return;
+    if (!productId) {
+        document.getElementById("productName").textContent = "Product not found.";
+        return;
+    }
+
+    const product = getProductById(productId);
+    const name = product.getElementsByTagName("name")[0].textContent;
+    const image = product.getElementsByTagName("image")[0].textContent;
+    basePrice = parseFloat(product.getElementsByTagName("basePrice")[0].textContent);
+    const maxModules = product.getElementsByTagName("maxModules")[0].children;
+
+    // Set product name and image
+    document.getElementById("productName").textContent = name;
+    document.getElementById("productImage").src = image;
+
+    // Display initial price
+    document.getElementById("totalPrice").textContent = basePrice.toFixed(2);
+
+    const moduleMap = await fetchModules();
+    const moduleSelectors = document.getElementById("moduleSelectors");
+    const selectedModules = [];
+
+    // Loop through all module types
+    Array.from(maxModules).forEach(slot => {
+        const type = slot.tagName;
+        const max = parseInt(slot.textContent);
+
+        if (max > 0) {
+            const options = moduleMap[type]; // Fetch module options for this type
+            for (let i = 0; i < max; i++) {
+                const moduleDiv = createModuleSelector(`${type} Slot ${i + 1}`, options, selectedModules);
+                moduleSelectors.appendChild(moduleDiv);
             }
-
-            const product = getProductById(productId);
-            const name = product.getElementsByTagName("name")[0].textContent;
-            const image = product.getElementsByTagName("image")[0].textContent;
-            basePrice = parseFloat(product.getElementsByTagName("basePrice")[0].textContent);
-            const maxModules = product.getElementsByTagName("maxModules")[0].children;
-
-            // Set product name and image
-            document.getElementById("productName").textContent = name;
-            document.getElementById("productImage").src = image;
-
-            // Display initial price
-            document.getElementById("totalPrice").textContent = basePrice.toFixed(2);
-
-            const moduleMap = await fetchModules();
-            const moduleSelectors = document.getElementById("moduleSelectors");
-            const selectedModules = [];
-
-            Array.from(maxModules).forEach(slot => {
-                const type = slot.tagName;
-                const max = parseInt(slot.textContent);
-                const options = moduleMap[type];
-
-                for (let i = 0; i < max; i++) {
-                    const moduleDiv = createModuleSelector(`${type} Slot ${i + 1}`, options, selectedModules);
-                    moduleSelectors.appendChild(moduleDiv);
-                }
-            });
         }
+    });
+}
 
         initialize();
     </script>
