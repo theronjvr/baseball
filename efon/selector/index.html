@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Selector</title>
     <style>
         .product {
@@ -13,6 +15,9 @@
             height: 150px;
             cursor: pointer;
         }
+        .product p {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -20,43 +25,42 @@
     <div id="productContainer"></div>
 
     <script>
-        const productXML = `
-            <products>
-                <product id="1">
-                    <name>MSE Advanced</name>
-                    <image>https://theronjvr.github.io/efon/selector/images/Mse-droid.png</image>
-                </product>
-                <product id="2">
-                    <name>Probot Advanced II</name>
-                    <image>https://theronjvr.github.io/efon/selector/images/Probot-droid.png</image>
-                </product>
-            </products>
-        `;
+        // Function to fetch and parse product data from an XML file
+        async function fetchProducts() {
+            const response = await fetch('products.xml');
+            const text = await response.text();
+            const productDoc = new DOMParser().parseFromString(text, "application/xml");
+            return Array.from(productDoc.getElementsByTagName("product"));
+        }
 
-        const parser = new DOMParser();
-        const productDoc = parser.parseFromString(productXML, "application/xml");
-        const products = productDoc.getElementsByTagName("product");
+        // Function to display products dynamically
+        async function displayProducts() {
+            const products = await fetchProducts();
+            const productContainer = document.getElementById('productContainer');
 
-        const productContainer = document.getElementById("productContainer");
+            products.forEach(product => {
+                const productId = product.getAttribute('id');
+                const name = product.getElementsByTagName('name')[0].textContent;
+                const image = product.getElementsByTagName('image')[0].textContent;
 
-        Array.from(products).forEach(product => {
-            const id = product.getAttribute("id");
-            const name = product.getElementsByTagName("name")[0].textContent;
-            const image = product.getElementsByTagName("image")[0].textContent;
+                const productDiv = document.createElement('div');
+                productDiv.className = 'product';
+                productDiv.innerHTML = `
+                    <img src="${image}" alt="${name}" data-id="${productId}" />
+                    <p>${name}</p>
+                `;
 
-            const productDiv = document.createElement("div");
-            productDiv.className = "product";
-            productDiv.innerHTML = `
-                <img src="${image}" alt="${name}" data-id="${id}" />
-                <p>${name}</p>
-            `;
+                // Add an event listener to redirect to the selector page with the product ID
+                productDiv.querySelector('img').addEventListener('click', () => {
+                    window.location.href = `selector.html?productId=${productId}`;
+                });
 
-            productDiv.querySelector("img").addEventListener("click", () => {
-                window.location.href = `selector.html?productId=${id}`;
+                productContainer.appendChild(productDiv);
             });
+        }
 
-            productContainer.appendChild(productDiv);
-        });
+        // Call displayProducts function to load and display products when the page is ready
+        displayProducts();
     </script>
 </body>
 </html>
