@@ -82,9 +82,6 @@
             return moduleMap;
         }
 
-        console.log("Products Data: ", products);
-console.log("Modules Data: ", moduleMap);
-
         // Get product by ID
         function getProductById(id, products) {
             return products.find(product => product.getAttribute("id") === id);
@@ -144,38 +141,36 @@ console.log("Modules Data: ", moduleMap);
                 });
                 console.log(`Creating selector for: ${labelText}, Type: ${type}`, moduleMap[type]);}
 
-            select.addEventListener("change", () => {
-                let selectedPrice = 0;
+                select.addEventListener("change", () => {
+    const selectedValue = select.value;
 
-                // If (none) is selected, set price to 0
-                if (select.value !== "none") {
-    let selectedOption = null;
-    if (type === "Hybrid") {
-        selectedOption =
-            (moduleMap["Combat"] || []).find(opt => opt.id === select.value) ||
-            (moduleMap["Service"] || []).find(opt => opt.id === select.value);
+    if (selectedValue === "none") {
+        description.textContent = "(none)";
+        selectedPrice = 0;
     } else {
-        selectedOption = (moduleMap[type] || []).find(opt => opt.id === select.value);
-    }
-    description.textContent = selectedOption?.description || "Select a module";
-    selectedPrice = selectedOption?.price || 0;
-} else {
-    description.textContent = "(none)";
-}
-                // Update selected modules
-                const currentIndex = selectedModules.findIndex(
-                    item => item.label === labelText
-                );
-                if (currentIndex >= 0) {
-                    selectedModules[currentIndex] = { label: labelText, value: select.value };
-                } else {
-                    selectedModules.push({ label: labelText, value: select.value });
-                }
+        const selectedOption =
+            type === "Hybrid"
+                ? (moduleMap["Combat"] || []).find(opt => opt.id === selectedValue) ||
+                  (moduleMap["Service"] || []).find(opt => opt.id === selectedValue)
+                : (moduleMap[type] || []).find(opt => opt.id === selectedValue);
 
-                // Update price and summary
-                updatePrice(selectedModules);
-                updateSummary(selectedModules);
-            });
+        description.textContent = selectedOption?.description || "Select a module";
+        selectedPrice = selectedOption?.price || 0;
+    }
+
+    // Update selected modules
+    const currentIndex = selectedModules.findIndex(item => item.label === labelText);
+    if (currentIndex >= 0) {
+        selectedModules[currentIndex] = { label: labelText, value: selectedValue };
+    } else {
+        selectedModules.push({ label: labelText, value: selectedValue });
+    }
+
+    // Update price and summary
+    updatePrice(selectedModules);
+    updateSummary(selectedModules);
+});
+
 
             container.appendChild(label);
             container.appendChild(select);
@@ -198,6 +193,7 @@ console.log("Modules Data: ", moduleMap);
         }
 
         // Update summary
+        const summaryField = document.getElementById("summaryField");
         function updateSummary(selectedModules) {
             // Filter out "none" selections
             const filteredModules = selectedModules.filter(module => module.value !== "none");
@@ -213,63 +209,59 @@ console.log("Modules Data: ", moduleMap);
         }
 
         // Initialize product and module data
+async function initialize() {
+    const summaryField = document.getElementById("summaryField");
+    const moduleSelectors = document.getElementById("moduleSelectors");
+    const totalPriceElement = document.getElementById("totalPrice");
 
-        (async function testFetch() {
-    const response = await fetch("modules.xml");
-    if (response.ok) {
-        console.log("Modules XML loaded successfully!");
-        const text = await response.text();
-        console.log("Modules XML content:", text);
-    } else {
-        console.error("Failed to load modules.xml");
+    // Fetch data
+    const products = await fetchProductData();
+    const moduleMap = await fetchModules();
+    console.log("Products Data: ", products);
+    console.log("Modules Data: ", moduleMap);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get("productId");
+
+    if (!productId) {
+        document.getElementById("productName").textContent = "Product not found.";
+        return;
     }
-})();
 
-        async function initialize() {
-            const summaryField = document.getElementById("summaryField");
-            const products = await fetchProductData();
-            const moduleMap = await fetchModules(); // Ensure moduleMap contains valid data
-            const urlParams = new URLSearchParams(window.location.search);
-            const productId = urlParams.get("productId");
+    // Set product details
+    const product = getProductById(productId, products);
+    const name = product.getElementsByTagName("name")[0].textContent;
+    const image = product.getElementsByTagName("image")[0].textContent;
+    basePrice = parseFloat(product.getElementsByTagName("basePrice")[0].textContent);
+    const maxModules = product.getElementsByTagName("maxModules")[0].children;
 
-            if (!productId) {
-                document.getElementById("productName").textContent = "Product not found.";
-                return;
-            }
+    document.getElementById("productName").textContent = name;
+    document.getElementById("productImage").src = image;
+    totalPriceElement.textContent = basePrice.toFixed(0);
 
-            const product = getProductById(productId, products);
-            const name = product.getElementsByTagName("name")[0].textContent;
-            const image = product.getElementsByTagName("image")[0].textContent;
-            basePrice = parseFloat(product.getElementsByTagName("basePrice")[0].textContent);
-            const maxModules = product.getElementsByTagName("maxModules")[0].children;
+    const selectedModules = [];
 
-            // Set product name and image
-            document.getElementById("productName").textContent = name;
-            document.getElementById("productImage").src = image;
+    // Create selectors
+    Array.from(maxModules).forEach(moduleSlot => {
+    const moduleType = moduleSlot.tagName;
+    const maxSlots = parseInt(moduleSlot.textContent);
 
-            // Display initial price
-            document.getElementById("totalPrice").textContent = basePrice.toFixed(2);
-
-            const moduleSelectors = document.getElementById("moduleSelectors");
-            const selectedModules = [];
-
-            // Loop through all module types
-            Array.from(maxModules).forEach(slot => {
-                const type = slot.tagName;
-                const max = parseInt(slot.textContent);
-
-                if (max > 0) {
-                    const options = moduleMap[type]; // Fetch module options for this type
-                    for (let i = 0; i < max; i++) {
-                        const moduleDiv = createModuleSelector(`${type} Slot ${i + 1}`, type, moduleMap, selectedModules);
-                        moduleSelectors.appendChild(moduleDiv);
-                    }
-                }
-            });
+    if (maxSlots > 0) {
+        const options = moduleMap[moduleType];
+        for (let i = 0; i < maxSlots; i++) {
+            const moduleDiv = createModuleSelector(
+                `${moduleType} Slot ${i + 1}`,
+                moduleType,
+                moduleMap,
+                selectedModules
+            );
+            moduleSelectors.appendChild(moduleDiv);
         }
-        console.log(moduleMap); // Check if the moduleMap has data for Combat and Service
+    }
+});
+}
 
-        initialize();
+initialize();
     </script>
 </body>
 </html>
