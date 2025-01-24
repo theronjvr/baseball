@@ -249,7 +249,10 @@ async function initialize() {
 
     document.getElementById("productName").textContent = name;
     document.getElementById("productImage").src = image;
-    totalPriceElement.textContent = basePrice.toFixed(0);
+
+        // Format and display the initial price
+        const formattedPrice = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(basePrice);
+    totalPriceElement.textContent = formattedPrice;
 
     const selectedModules = [];
 
