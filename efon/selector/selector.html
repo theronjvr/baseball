@@ -82,6 +82,9 @@
             return moduleMap;
         }
 
+        console.log("Products Data: ", products);
+console.log("Modules Data: ", moduleMap);
+
         // Get product by ID
         function getProductById(id, products) {
             return products.find(product => product.getAttribute("id") === id);
@@ -139,20 +142,26 @@
                     select.appendChild(opt);
                     modulePrices[option.id] = option.price; // Store module price
                 });
-            }
+                console.log(`Creating selector for: ${labelText}, Type: ${type}`, moduleMap[type]);}
 
             select.addEventListener("change", () => {
                 let selectedPrice = 0;
 
                 // If (none) is selected, set price to 0
                 if (select.value !== "none") {
-                    const selectedOption = options.find(opt => opt.id === select.value);
-                    description.textContent = selectedOption?.description || "Select a module";
-                    selectedPrice = selectedOption?.price || 0;
-                } else {
-                    description.textContent = "(none)";
-                }
-
+    let selectedOption = null;
+    if (type === "Hybrid") {
+        selectedOption =
+            (moduleMap["Combat"] || []).find(opt => opt.id === select.value) ||
+            (moduleMap["Service"] || []).find(opt => opt.id === select.value);
+    } else {
+        selectedOption = (moduleMap[type] || []).find(opt => opt.id === select.value);
+    }
+    description.textContent = selectedOption?.description || "Select a module";
+    selectedPrice = selectedOption?.price || 0;
+} else {
+    description.textContent = "(none)";
+}
                 // Update selected modules
                 const currentIndex = selectedModules.findIndex(
                     item => item.label === labelText
@@ -204,7 +213,20 @@
         }
 
         // Initialize product and module data
+
+        (async function testFetch() {
+    const response = await fetch("modules.xml");
+    if (response.ok) {
+        console.log("Modules XML loaded successfully!");
+        const text = await response.text();
+        console.log("Modules XML content:", text);
+    } else {
+        console.error("Failed to load modules.xml");
+    }
+})();
+
         async function initialize() {
+            const summaryField = document.getElementById("summaryField");
             const products = await fetchProductData();
             const moduleMap = await fetchModules(); // Ensure moduleMap contains valid data
             const urlParams = new URLSearchParams(window.location.search);
