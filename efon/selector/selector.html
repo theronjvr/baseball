@@ -168,45 +168,30 @@
 
     // Update price and summary
     updatePrice(selectedModules);
-    updateSummary(selectedModules);
-});
+    function updateSummary(selectedModules) {
+    // Filter out "none" selections
+    const filteredModules = selectedModules.filter(module => module.value !== "none");
 
-
-            container.appendChild(label);
-            container.appendChild(select);
-            container.appendChild(description);
-
-            return container;
+    // Group modules by their type or description
+    const moduleCounts = {};
+    filteredModules.forEach(module => {
+        const key = module.value; // Use the module value (ID) as the key
+        if (!moduleCounts[key]) {
+            moduleCounts[key] = { count: 0, label: module.value };
         }
+        moduleCounts[key].count++;
+    });
 
-        // Update total price
-        function updatePrice(selectedModules) {
-            const moduleTotal = selectedModules.reduce((total, module) => {
-                return module.value !== "none" ? total + (modulePrices[module.value] || 0) : total;
-            }, 0);
-            const totalPrice = basePrice + moduleTotal;
+    // Convert grouped data into a readable summary
+    const moduleSummary = Object.values(moduleCounts)
+        .map(module => `${module.count} ${module.label}${module.count > 1 ? "s" : ""}`)
+        .join(", ");
 
-            // Format price with commas and no decimals
-            const formattedPrice = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(totalPrice);
+    const productName = document.getElementById("productName").textContent;
+    const totalPrice = document.getElementById("totalPrice").textContent;
 
-            document.getElementById("totalPrice").textContent = formattedPrice;
-        }
-
-        // Update summary
-        const summaryField = document.getElementById("summaryField");
-        function updateSummary(selectedModules) {
-            // Filter out "none" selections
-            const filteredModules = selectedModules.filter(module => module.value !== "none");
-
-            const modules = filteredModules
-                .map(module => `${module.label}: ${module.value}`)
-                .join(", ");
-
-            const productName = document.getElementById("productName").textContent;
-            const totalPrice = document.getElementById("totalPrice").textContent;
-
-            summaryField.value = `I would like to purchase a ${productName} with the following modules: ${modules}. Total Price: ${totalPrice} Republic Credits.`;
-        }
+    summaryField.value = `I would like to purchase a ${productName} with the following modules: ${moduleSummary}. Total Price: ${totalPrice} Republic Credits.`;
+}
 
         // Initialize product and module data
 async function initialize() {
